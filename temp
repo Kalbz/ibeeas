@@ -1,0 +1,279 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math' as Math;
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Hexagon Idea2 Grid',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: IdeaGridPage(),
+    );
+  }
+}
+
+class IdeaGridPage extends StatefulWidget {
+  @override
+  _IdeaGridPageState createState() => _IdeaGridPageState();
+}
+
+class _IdeaGridPageState extends State<IdeaGridPage> {
+  List<Idea> ideas = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchIdeas();
+  }
+
+Future<void> _fetchIdeas() async {
+  try {
+
+    QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('ideas').get();
+    print("Documents fetched: ${snapshot.docs.length}");
+    setState(() {
+      ideas = snapshot.docs.map((doc) => Idea(title: doc['title'], description: doc['description'])).toList();
+    });
+  } catch (e) {
+    print("Error fetching ideas: $e");
+  }
+}
+
+
+  void _addIdea(String title, String description) async {
+
+    DocumentReference docRef = await FirebaseFirestore.instance.collection('ideas').add({
+      'title': title,
+      'description': description,
+    });
+    setState(() {
+      ideas.add(Idea(title: title, description: description));
+    });
+
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Hexagon Idea Grid'),
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          double hexagonWidth = 100;
+          double hexagonHeight = hexagonWidth * Math.sqrt(3) / 2;
+          int numColumns = (constraints.maxWidth / (hexagonWidth * 0.75)).floor();
+          int numRows = (constraints.maxHeight / (hexagonHeight * Math.sqrt(3) / 1.75)).floor();
+
+          return InteractiveViewer(
+            boundaryMargin: EdgeInsets.all(double.infinity),
+            clipBehavior: Clip.none,
+            minScale: 0.5,
+            maxScale: 2.0,
+            child: Stack(
+            children: List.generate(ideas.length, (index) {
+                int row = index ~/ numColumns;
+                int col = index % numColumns;
+
+                double offsetX = col * (hexagonWidth * 0.75);
+                double offsetY = row * (hexagonHeight * Math.sqrt(3) / 1.75);
+                if (col % 2 == 1) {
+                offsetY += hexagonHeight / 2;
+                }
+
+                return Positioned(
+                left: offsetX,
+                top: offsetY,
+                child: GestureDetector(
+                    onTap: () => _showIdea(context, ideas[index]),
+                    child: Hexagon(
+                    idea: ideas[index],
+                    width: hexagonWidth,
+                    height: hexagonHeight,
+                    ),
+                ),
+                );
+            }),
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddIdeaDialog(),
+        tooltip: 'Add Idea',
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _showAddIdeaDialog() {
+    String title = "";
+    String description = "";
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Add Idea'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: InputDecoration(labelText: 'Title'),
+                onChanged: (value) => title = value,
+              ),
+              TextField(
+                decoration: InputDecoration(labelText: 'Description'),
+                onChanged: (value) => description = value,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                _addIdea(title, description);
+                Navigator.of(context).pop();
+              },
+              child: Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showIdea(BuildContext context, Idea idea) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(idea.title),
+          content: Text(idea.description),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class Idea {
+  final String title;
+  final String description;
+
+  Idea({required this.title, required this.description});
+}
+
+class Hexagon extends StatelessWidget {
+  final Idea idea;
+  final double width;
+  final double height;
+
+  Hexagon({required this.idea, required this.width, required this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size(width, height),
+      painter: HexagonPainter(),
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Center(
+          child: Text(
+            idea.title,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white, fontSize: 10),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class HexagonPainter extends CustomPainter {
+  final bool drawOutline;
+
+  HexagonPainter({this.drawOutline = true});
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint hexagonPaint = Paint()
+      ..color = Color(0xFFFFE080) // Orange hexagon color
+      ..style = PaintingStyle.fill;
+
+    Paint outlinePaint = Paint()
+      ..color = Colors.orange
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5.0;
+
+    Paint circlePaint = Paint()
+      ..color = Colors.yellow[700]!
+      ..style = PaintingStyle.fill;
+
+    Path path = Path();
+    double width = size.width;
+    double height = size.height;
+    double sideLength = width / 2;
+    double radius = sideLength;
+    double centerX = width / 2;
+    double centerY = height / 2;
+
+    path.moveTo(centerX + radius, centerY);
+    for (int i = 1; i <= 6; i++) {
+      path.lineTo(
+        centerX + radius * Math.cos(i * Math.pi / 3),
+        centerY + radius * Math.sin(i * Math.pi / 3),
+      );
+    }
+    path.close();
+
+    // Draw the smaller hexagon (fill)
+    Path hexagonPathFill = path;
+    canvas.drawPath(hexagonPathFill, hexagonPaint);
+
+    // Draw the larger hexagon (stroke only)
+    canvas.drawPath(path, outlinePaint);
+
+    // Clip the circle inside the hexagon
+    canvas.save();
+    canvas.clipPath(hexagonPathFill, doAntiAlias: true);
+    drawCircleHighlight(canvas, Offset(centerX, centerY), sideLength, circlePaint);
+    canvas.restore();
+  }
+
+  void drawCircleHighlight(Canvas canvas, Offset center, double hexSize, Paint circlePaint) {
+    double circleRadius = hexSize * 1.05; // Size of the circle relative to the hexagon
+    Offset circleCenter = center.translate(hexSize * 0.4, -hexSize * 0.4); // Positioned in the top-right corner
+
+    // Draw the circle within the hexagon's clipped area
+    canvas.drawCircle(circleCenter, circleRadius, circlePaint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return false;
+  }
+  
+}

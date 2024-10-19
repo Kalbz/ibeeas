@@ -1,0 +1,13 @@
+Hi! I'd want to ball some ideas with you
+
+I am currently building an app named "IBeeas". It is supposed to be a sort of "spread your ideas" as well as just to write them down somewhere.
+
+It is currently very bee themed, and i am currently storing ideas in a hexagonal grid (to replicate bees and ohw they store honey) and whenever a hexagon is filled, its filled with honey. Users can select whatever hexagon that is not already filled to fill it with an idea, and whenever a hexagon that is filled is pressed, it displays the idea.
+
+I am thinking I want to have two seperate databases here, one is to be private for their own ideas, and the other one is for everyone to access.
+
+I am creating this for my university class, and I am unsure of whether this is enough to pass, so I am asking for more ideas for my ibeeas app (haha see what I did there?)
+
+Do you have anything else I could hopefully implement?
+
+I am thinking sort of having a sort/filter somehow, but anything else or whatever comes to your mind im open to it!

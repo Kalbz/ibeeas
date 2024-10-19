@@ -1,0 +1,129 @@
+0xFFFFA500
+0xFFFFE080
+
+
+
+import 'package:flutter/material.dart';
+import 'dart:math';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Hexagon Grid',
+      home: Scaffold(
+        appBar: AppBar(title: Text("Hexagon Grid")),
+        body: HexagonGrid(),
+      ),
+    );
+  }
+}
+
+class HexagonGrid extends StatefulWidget {
+  @override
+  _HexagonGridState createState() => _HexagonGridState();
+}
+
+class _HexagonGridState extends State<HexagonGrid> {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Expanded(
+          child: CustomPaint(
+            size: Size(double.infinity, double.infinity),
+            painter: HexagonGridPainter(),
+            
+          )
+        ),
+        ElevatedButton(
+          onPressed: () {
+            print("Button pressed");
+          },
+          child: Text("Press me"),
+        ),
+      ],
+    );
+  }
+}
+
+class HexagonGridPainter extends CustomPainter {
+  final double hexagonSize = 60; // Size of each hexagon
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double hexHeight = sqrt(3) * hexagonSize; // Calculate hexagon height
+    final double hexWidth = 2 * hexagonSize; // Calculate hexagon width
+    final double verticalSpacing = hexHeight; // Space between rows
+    final double horizontalSpacing = hexWidth * 0.75; // Space between columns with staggering
+
+    final Paint hexagonPaint = Paint()
+      ..color = Color(0xFFFFE080) // Orange hexagon color
+      ..style = PaintingStyle.fill;
+
+    final Paint outlinePaint = Paint()
+      ..color = Colors.orange
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5.0;
+
+    final Paint circlePaint = Paint()
+      ..color = Colors.yellow[700]! // Light yellow for the reflective highlight
+      ..style = PaintingStyle.fill;
+
+    // Loop through and position the hexagons in the grid
+    for (double x = 0; x < size.width; x += horizontalSpacing) {
+      for (double y = 0; y < size.height; y += verticalSpacing) {
+        double offsetY = (x ~/ horizontalSpacing).isEven ? 0 : hexHeight / 2;
+
+        Offset hexCenter = Offset(x, y + offsetY);
+
+        // Draw the hexagon twice to simulate an outer stroke
+        // Draw the smaller hexagon (fill)
+        Path hexagonPathFill = drawHexagonPath(hexCenter, hexagonSize - outlinePaint.strokeWidth / 2);
+        canvas.drawPath(hexagonPathFill, hexagonPaint);
+
+        // Draw the larger hexagon (stroke only)
+        Path hexagonPathOutline = drawHexagonPath(hexCenter, hexagonSize);
+        canvas.drawPath(hexagonPathOutline, outlinePaint);
+
+        // Clip the circle inside the hexagon
+        canvas.save();
+        canvas.clipPath(hexagonPathFill, doAntiAlias: true);
+        drawCircleHighlight(canvas, hexCenter, hexagonSize, circlePaint);
+        canvas.restore();
+      }
+    }
+  }
+
+  // Method to create a hexagon path at a given center with a specified size
+  Path drawHexagonPath(Offset center, double size) {
+    final Path path = Path();
+    for (int i = 0; i < 6; i++) {
+      final angle = (pi / 3) * i;
+      final x = center.dx + size * cos(angle);
+      final y = center.dy + size * sin(angle);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    return path;
+  }
+
+  // Method to draw the reflective circle highlight in the top right corner
+  void drawCircleHighlight(Canvas canvas, Offset center, double hexSize, Paint circlePaint) {
+    double circleRadius = hexSize * 1.05; // Size of the circle relative to the hexagon
+    Offset circleCenter = center.translate(hexSize * 0.4, -hexSize * 0.4); // Positioned in the top-right corner
+
+    // Draw the circle within the hexagon's clipped area
+    canvas.drawCircle(circleCenter, circleRadius, circlePaint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
+}
