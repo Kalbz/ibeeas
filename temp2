@@ -479,3 +479,49 @@ void _upvoteIdea(int index) async {
     );
   }
 }
+
+
+
+
+
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../models/idea.dart';
+
+class Hexagon extends StatelessWidget {
+  final Idea idea;
+  final double width;
+  final double height;
+
+  Hexagon({required this.idea, required this.width, required this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    return Visibility( // Only render hexagons close to the viewport
+      visible: idea.visible,
+      child: RepaintBoundary( // Wrap with RepaintBoundary to optimize rendering
+        child: SizedBox(
+          width: width,
+          height: height,
+          child: Stack(
+            children: [
+              SvgPicture.asset(
+                'assets/single_hexagon.svg',
+                width: width,
+                height: height,
+                color: idea.filled ? Colors.orange[800] : Color(0xFFFFE080),
+              ),
+              Center(
+                child: Text(
+                  idea.title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white, fontSize: 10),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

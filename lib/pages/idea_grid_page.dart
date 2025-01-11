@@ -17,15 +17,19 @@ class IdeaGridPage extends StatefulWidget {
 }
 
 class _IdeaGridPageState extends State<IdeaGridPage> {
+  int _selectedIndex = 0; 
+
+
   List<Idea> ideas = [];
   List<Idea> filteredIdeas = [];
   bool isLoading = true;
   final List<String> tags = ["Math", "Programming", "Gardening", "Religion", "Creativity"];
   String searchQuery = "";
-  final int totalHexagons = 500;
+  final int totalHexagons = 5000;
   TransformationController _transformationController = TransformationController();
   Set<String> loadedChunks = Set();
   final int chunkSize = 6;
+  
 
   @override
   void initState() {
@@ -248,6 +252,7 @@ void _showAddIdeaDialog(int index) {
     context: context,
     builder: (context) {
       return Dialog(
+        backgroundColor: Color(0xFFFFF1C1), // Light honey color for the dialog
         child: HoneyLineBorderModal(
           width: 300, // Adjust width as needed
           height: 400, // Adjust height as needed
@@ -362,56 +367,129 @@ void _showAddIdeaDialog(int index) {
   );
 }
 
-
-
-
 void _showIdeaDetailsDialog(int index) {
   TextEditingController commentController = TextEditingController();
 
   showDialog(
     context: context,
     builder: (context) {
-      return AlertDialog(
-        title: Text(ideas[index].title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text("${ideas[index].description}\nTag: ${ideas[index].tag}\nUpvotes: ${ideas[index].upvotes}"),
-            SizedBox(height: 10),
-            Text("Comments:"),
-            for (String comment in ideas[index].comments) Text("- $comment"),
-            TextField(
-              controller: commentController,
-              decoration: InputDecoration(labelText: 'Add a comment'),
+      return Dialog(
+        backgroundColor: Color(0xFFFFF1C1), // Light honey color for the dialog background
+        child: HoneyLineBorderModal(
+          width: 300, // Adjust width as needed
+          height: 500, // Increased height to provide more space
+          borderThickness: 8,
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Title of the dialog
+                Text(
+                  ideas[index].title,
+                  style: TextStyle(
+                    fontSize: 24.0,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFB5651D), // Honey dark brown for contrast
+                  ),
+                ),
+                SizedBox(height: 16.0),
+                // Idea details
+                Text(
+                  "${ideas[index].description}\nTag: ${ideas[index].tag}\nUpvotes: ${ideas[index].upvotes}",
+                  style: TextStyle(
+                    color: Color(0xFFB5651D), // Dark brown text
+                  ),
+                ),
+                SizedBox(height: 16.0),
+                // Comments section
+                Text(
+                  "Comments:",
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFB5651D),
+                  ),
+                ),
+                SizedBox(height: 8.0),
+                // List of comments
+                Expanded(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: ideas[index].comments.length,
+                    itemBuilder: (context, commentIndex) {
+                      return Padding(
+                        padding: EdgeInsets.symmetric(vertical: 4.0),
+                        child: Text(
+                          "- ${ideas[index].comments[commentIndex]}",
+                          style: TextStyle(color: Color(0xFFB5651D)),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(height: 10.0),
+                // Add comment field
+                TextField(
+                  controller: commentController,
+                  decoration: InputDecoration(
+                    labelText: 'Add a comment',
+                    labelStyle: TextStyle(
+                      color: Color(0xFFB5651D), // Dark brown label
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFFFD700), width: 2.0),
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFFFA500), width: 2.5),
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20.0),
+                // Action buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFFFA500), // Warm honey color for the button
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                      ),
+                      onPressed: () {
+                        _addComment(index, commentController.text);
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('Add Comment'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFFFA500), // Warm honey color for the button
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                      ),
+                      onPressed: () {
+                        _upvoteIdea(index);
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('Upvote'),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: Text('Close'),
-          ),
-          TextButton(
-            onPressed: () {
-              _addComment(index, commentController.text);
-              Navigator.of(context).pop();
-            },
-            child: Text('Add Comment'),
-          ),
-          TextButton(
-            onPressed: () {
-              _upvoteIdea(index);
-              Navigator.of(context).pop();
-            },
-            child: Text('Upvote'),
-          ),
-        ],
       );
     },
   );
 }
+
+
 
 void _addComment(int index, String comment) async {
   if (comment.isEmpty) return;
@@ -479,6 +557,7 @@ void _upvoteIdea(int index) async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFFFCC00), // Background color
       appBar: AppBar(
         title: Center(
           child: Row(
@@ -502,6 +581,8 @@ void _upvoteIdea(int index) async {
               decoration: InputDecoration(
                 hintText: 'Search by title or tag...',
                 prefixIcon: Icon(Icons.search),
+                fillColor: Color(0xFFFA9A00),
+                filled: true,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10.0),
                 ),
@@ -515,7 +596,7 @@ void _upvoteIdea(int index) async {
       ),
       body: GestureDetector(
         onTapDown: (TapDownDetails details) {
-          print('Tapped at: x = \${details.localPosition.dx}, y = \${details.localPosition.dy}');
+          print('Tapped at: x = ${details.localPosition.dx}, y = ${details.localPosition.dy}');
         },
         child: Stack(
           children: [
@@ -559,59 +640,62 @@ void _upvoteIdea(int index) async {
                       ),
                     ),
                   ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: BottomNavigationBar(
-                type: BottomNavigationBarType.fixed,
-                items: const <BottomNavigationBarItem>[
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.lightbulb_outline),
-                    label: 'My Ideas',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.group),
-                    label: 'Other Ideas',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.contact_mail),
-                    label: 'Contact',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.person),
-                    label: 'Profile',
-                  ),
-                ],
-onTap: (index) {
-  if (index == 0) {
-    // Navigate to private ideas (user-specific)
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => IdeaGridPage(),
-      ),
-    );
-  } else if (index == 1) {
-    // Navigate to shared ideas (public)
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => IdeaGridPage(useOtherDatabase: true),
-      ),
-    );
-  } else if (index == 2) {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => Center(child: Text('Contact Page'))));
-  } else if (index == 3) {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePage()));
-  }
-},
-
-              ),
-            ),
           ],
         ),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Color(0xFFFA9A00),
+        type: BottomNavigationBarType.fixed,
+        currentIndex: _selectedIndex, // Set the selected index
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.lightbulb_outline),
+            label: 'My Ideas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.group),
+            label: 'Other Ideas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index; // Update the selected index
+          });
+
+          if (index == 0 && !_isCurrentPage("MyIdeas")) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => IdeaGridPage(),
+              ),
+            );
+          } else if (index == 1 && !_isCurrentPage("OtherIdeas")) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => IdeaGridPage(useOtherDatabase: true),
+              ),
+            );
+          } else if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProfilePage(),
+              ),
+            );
+          }
+        },
+      ),
     );
+  }
+
+  // Utility method to avoid redundant navigation
+  bool _isCurrentPage(String pageName) {
+    return (widget.useOtherDatabase && pageName == "OtherIdeas") ||
+        (!widget.useOtherDatabase && pageName == "MyIdeas");
   }
 }

@@ -31,10 +31,17 @@ dependencies:
   flutter:
     sdk: flutter
   firebase_core: ^3.6.0 # Replace with the actual latest version from pub.dev
+  firebase_storage: ^12.3.3
   cloud_firestore: ^5.4.4 # Replace with the actual latest version from pub.dev
   firebase_auth: ^5.3.1
   rive: ^0.13.14
   flutter_svg: ^2.0.0
+  xml: ^6.5.0
+  image_picker: ^1.1.2
+  google_sign_in: ^6.1.0
+  flutter_facebook_auth: ^5.0.0
+
+
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -71,7 +78,14 @@ flutter:
     - assets/bee_animation/Frame2.png
     - assets/bee_animation/Frame3.png
     - assets/bee_animation/bee_intro_anim.riv
-    - assets/single_hexagon.svg
+    - assets/single_hexagon_filled.svg
+    - assets/single_hexagon_unfilled.svg
+    - assets/login_background.png
+    - assets/register_background.png
+    - assets/profile_background.png
+    - assets/profile_picture.jpg
+    # - assets/registration_background.png
+    # - assets/contact_background.png
 
   #   - images/a_dot_ham.jpeg
 
