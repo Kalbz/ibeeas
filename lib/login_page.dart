@@ -14,7 +14,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final GoogleSignIn _googleSignIn = GoogleSignIn(); // GoogleSignIn instance
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   // Google Sign-In Method
   Future<void> _googleLogin() async {
@@ -54,16 +54,13 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
 
-    // Initialize Rive
     rive.RiveFile.initialize().then((_) {
-      // Load the Rive file
       rootBundle.load('assets/bee_animation/bee_intro_anim.riv').then(
         (data) async {
           try {
             final file = rive.RiveFile.import(data);
             final artboard = file.mainArtboard;
 
-            // Add a SimpleAnimation controller to play animation automatically
             _animationController = rive.SimpleAnimation('Timeline 1');
             artboard.addController(_animationController!);
 
@@ -106,14 +103,12 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background image
           Positioned.fill(
             child: Image.asset(
               'assets/login_background.png',
               fit: BoxFit.cover,
             ),
           ),
-          // Optional: Rive animation overlay
           _riveArtboard == null
               ? const SizedBox()
               : Positioned.fill(
@@ -122,21 +117,18 @@ class _LoginPageState extends State<LoginPage> {
                     fit: BoxFit.cover,
                   ),
                 ),
-          // Large icon at the top right
-// Large icon at the top right
           Positioned(
-            top: screenHeight * 0.05, // Maintain the position from the top
-            right: screenWidth * 0.12, // Maintain the position from the right
+            top: screenHeight * 0.05,
+            right: screenWidth * 0.12,
           child: Image.asset(
             'assets/upscaled_ibeeas_optimized.png',
-            width: screenWidth * 0.4, // 20% of screen width
-            height: screenWidth * 0.4, // Adjust proportionally if needed
-            fit: BoxFit.contain, // Maintain aspect ratio
+            width: screenWidth * 0.4,
+            height: screenWidth * 0.4,
+            fit: BoxFit.contain,
           ),
 
           ),
 
-          // Main content
           SingleChildScrollView(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: screenHeight * 0.40),
@@ -161,10 +153,10 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-          // Circular Buttons Section
+
           Positioned(
-            left: screenWidth * 0.165, // Move 10% from the left
-            bottom: screenHeight * 0.29, // Move 5% up from the bottom
+            left: screenWidth * 0.165,
+            bottom: screenHeight * 0.29, 
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -178,17 +170,17 @@ class _LoginPageState extends State<LoginPage> {
                   },
                   tooltip: 'Register',
                 ),
-                SizedBox(width: screenWidth * 0.05), // Proportional spacing
+                SizedBox(width: screenWidth * 0.05), 
                 CircularButton(
-                  icon: Icons.login, // Replace with a custom Google button icon later
+                  icon: Icons.login, 
                   onPressed: _googleLogin,
                   tooltip: 'Google Login',
                 ),
-                SizedBox(width: screenWidth * 0.05), // Proportional spacing
+                SizedBox(width: screenWidth * 0.05), 
                 CircularButton(
                   icon: Icons.settings,
                   onPressed: () {
-                    // Settings button functionality
+                    // Settings button functionality to be implemented
                   },
                   tooltip: 'Settings',
                 ),
@@ -201,7 +193,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-// Widget for Circular Buttons
 class CircularButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;

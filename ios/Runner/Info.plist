@@ -59,11 +59,11 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<!-- Replace with your reversed client ID -->
-				<string>com.googleusercontent.apps.YOUR_CLIENT_ID</string>
+				<string>com.googleusercontent.apps.60365986213-n93at9bb25ofhq6refqrk01pmmt0n0mc</string>
 			</array>
 		</dict>
 	</array>
 	<key>GIDClientID</key>
-	<string>YOUR_CLIENT_ID</string>
+	<string>60365986213-n93at9bb25ofhq6refqrk01pmmt0n0mc.apps.googleusercontent.com</string>
 </dict>
 </plist>

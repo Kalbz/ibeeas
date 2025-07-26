@@ -18,10 +18,9 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void initState() {
     super.initState();
-    // Set the status bar to blend with the background
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent, // Ensure status bar blends with the background
-      statusBarIconBrightness: Brightness.dark, // Change based on your design (e.g., dark or light)
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
     ));
   }
 
@@ -38,7 +37,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
       User? user = userCredential.user;
       if (user != null) {
-        // Save the username to Firestore
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'username': _usernameController.text.trim(),
           'email': user.email,
@@ -63,14 +61,14 @@ class _RegisterPageState extends State<RegisterPage> {
     final double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: Colors.transparent, // Ensure the Scaffold background is transparent
+      backgroundColor: Colors.transparent, 
 appBar: AppBar(
   backgroundColor: Colors.transparent,
   elevation: 0,
-  leading: Container(), // An empty container to prevent the default back arrow on the left
+  leading: Container(), 
   actions: [
     Padding(
-      padding: const EdgeInsets.only(right: 320.0, bottom: 12.0), // Adjust padding as needed
+      padding: const EdgeInsets.only(right: 320.0, bottom: 12.0),
       child: IconButton(
         icon: Icon(Icons.arrow_back, color: Colors.black),
         iconSize: 36.0,
@@ -88,10 +86,9 @@ appBar: AppBar(
 ),
 
 
-      extendBodyBehindAppBar: true, // Allows the body to extend behind the AppBar
+      extendBodyBehindAppBar: true, 
       body: Stack(
         children: [
-          // Background image
           Positioned.fill(
             child: Image.asset(
               'assets/register_background.png',
@@ -102,7 +99,7 @@ appBar: AppBar(
           isLoading
               ? Center(child: CircularProgressIndicator())
               : Column(
-                  mainAxisAlignment: MainAxisAlignment.end, // Align the content towards the bottom
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     SingleChildScrollView(
                       child: Padding(

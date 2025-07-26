@@ -44,6 +44,39 @@ class _IdeaGridPageState extends State<IdeaGridPage> {
     _transformationController.dispose();
     super.dispose();
   }
+
+Stream<List<Idea>> _streamIdeas() {
+  final User? user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    print("No user is logged in. Returning empty stream.");
+    return Stream.value([]);
+  }
+
+  final String collectionPath = 'ideas/${user.uid}/user_ideas';
+  print("Listening to Firestore collection: $collectionPath");
+
+  return FirebaseFirestore.instance
+      .collection(collectionPath)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return Idea(
+              id: doc.id,
+              title: data['title'] ?? '',
+              description: data['description'] ?? '',
+              filled: data['filled'] ?? false,
+              index: data['index'] ?? -1,
+              tag: data['tag'] ?? '',
+              upvotes: data['upvotes'] ?? 0,
+              comments: List<String>.from(data['comments'] ?? []),
+              x: data['x'] ?? 0.0,
+              y: data['y'] ?? 0.0,
+              visible: true,
+            );
+          }).toList());
+}
+
+
 Future<void> _fetchIdeas() async {
   setState(() {
     isLoading = true;
@@ -196,51 +229,48 @@ Future<void> _fetchIdeas() async {
   }
 
 void _addIdea(int index, String title, String description, String tag) async {
+  final User? user = FirebaseAuth.instance.currentUser;
+
+  if (user == null) {
+    print("Error: No user is logged in.");
+    return;
+  }
+
+  final String collectionName = widget.useOtherDatabase ? 'other_ideas' : 'ideas';
+  final String documentPath = widget.useOtherDatabase
+      ? "$collectionName/${ideas[index].id}"
+      : "$collectionName/${user.uid}/user_ideas/${ideas[index].id}";
+
   setState(() {
     ideas[index] = ideas[index].copyWith(filled: true, title: title, description: description, tag: tag);
   });
 
   try {
-    String collectionName = widget.useOtherDatabase ? 'other_ideas' : 'ideas';
-    User? user = FirebaseAuth.instance.currentUser;
+    print("Adding idea to Firestore at path: $documentPath");
+    await FirebaseFirestore.instance.doc(documentPath).set({
+      'x': ideas[index].x,
+      'y': ideas[index].y,
+      'title': title,
+      'description': description,
+      'filled': true,
+      'index': index,
+      'tag': tag,
+      'upvotes': 0,
+      'comments': [],
+      if (widget.useOtherDatabase) 'creatorId': user.uid, // Add creatorId for public ideas
+    });
 
-    if (collectionName == 'ideas' && user != null) {
-      // Add the idea to the user's private collection
-      await FirebaseFirestore.instance
-          .collection('ideas')
-          .doc(user.uid)
-          .collection('user_ideas')
-          .doc(ideas[index].id)
-          .set({
-        'x': ideas[index].x,
-        'y': ideas[index].y,
-        'title': title,
-        'description': description,
-        'filled': true,
-        'index': index,
-        'tag': tag,
-        'upvotes': 0, // Set initial upvotes to 0
-        'comments': [], // Set initial comments as an empty list
-      });
-    } else if (collectionName == 'other_ideas' && user != null) {
-      // Add to public "other_ideas" collection with creatorId
-      await FirebaseFirestore.instance.collection(collectionName).doc(ideas[index].id).set({
-        'creatorId': user.uid, // Include creatorId to manage write permissions
-        'x': ideas[index].x,
-        'y': ideas[index].y,
-        'title': title,
-        'description': description,
-        'filled': true,
-        'index': index,
-        'tag': tag,
-        'upvotes': 0, // Set initial upvotes to 0
-        'comments': [], // Set initial comments as an empty list
-      });
-    }
+    // Increment the "ideasPosted" field in the user's profile
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'ideasPosted': FieldValue.increment(1),
+    });
+
+    print("Idea added successfully: ID = ${ideas[index].id}");
   } catch (e) {
     print("Error adding idea: $e");
   }
 }
+
 
 
 void _showAddIdeaDialog(int index) {
@@ -252,32 +282,30 @@ void _showAddIdeaDialog(int index) {
     context: context,
     builder: (context) {
       return Dialog(
-        backgroundColor: Color(0xFFFFF1C1), // Light honey color for the dialog
+        backgroundColor: Color(0xFFFFF1C1),
         child: HoneyLineBorderModal(
-          width: 300, // Adjust width as needed
-          height: 400, // Adjust height as needed
+          width: 300,
+          height: 400,
           borderThickness: 8,
           child: Padding(
             padding: EdgeInsets.all(16.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Title of the dialog
                 Text(
                   'Add Idea',
                   style: TextStyle(
                     fontSize: 24.0,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFB5651D), // Honey dark brown color for contrast
+                    color: Color(0xFFB5651D),
                   ),
                 ),
                 SizedBox(height: 16.0),
-                // TextField for Title
                 TextField(
                   decoration: InputDecoration(
                     labelText: 'Title',
                     labelStyle: TextStyle(
-                      color: Color(0xFFB5651D), // Dark brown honey color for labels
+                      color: Color(0xFFB5651D),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: Color(0xFFFFD700), width: 2.0),
@@ -291,7 +319,6 @@ void _showAddIdeaDialog(int index) {
                   onChanged: (value) => title = value,
                 ),
                 SizedBox(height: 10.0),
-                // TextField for Description
                 TextField(
                   decoration: InputDecoration(
                     labelText: 'Description',
@@ -310,7 +337,6 @@ void _showAddIdeaDialog(int index) {
                   onChanged: (value) => description = value,
                 ),
                 SizedBox(height: 10.0),
-                // Dropdown for selecting tag
                 DropdownButton<String>(
                   value: selectedTag,
                   onChanged: (value) {
@@ -330,7 +356,6 @@ void _showAddIdeaDialog(int index) {
                   dropdownColor: Color(0xFFFFF1C1),
                 ),
                 SizedBox(height: 20.0),
-                // Action Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -345,7 +370,7 @@ void _showAddIdeaDialog(int index) {
                     ),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFFFA500), // Warm honey color for the button
+                        backgroundColor: Color(0xFFFFA500),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12.0),
                         ),
@@ -374,35 +399,32 @@ void _showIdeaDetailsDialog(int index) {
     context: context,
     builder: (context) {
       return Dialog(
-        backgroundColor: Color(0xFFFFF1C1), // Light honey color for the dialog background
+        backgroundColor: Color(0xFFFFF1C1),
         child: HoneyLineBorderModal(
-          width: 300, // Adjust width as needed
-          height: 500, // Increased height to provide more space
+          width: 300,
+          height: 500,
           borderThickness: 8,
           child: Padding(
             padding: EdgeInsets.all(16.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Title of the dialog
                 Text(
                   ideas[index].title,
                   style: TextStyle(
                     fontSize: 24.0,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFB5651D), // Honey dark brown for contrast
+                    color: Color(0xFFB5651D),
                   ),
                 ),
                 SizedBox(height: 16.0),
-                // Idea details
                 Text(
                   "${ideas[index].description}\nTag: ${ideas[index].tag}\nUpvotes: ${ideas[index].upvotes}",
                   style: TextStyle(
-                    color: Color(0xFFB5651D), // Dark brown text
+                    color: Color(0xFFB5651D),
                   ),
                 ),
                 SizedBox(height: 16.0),
-                // Comments section
                 Text(
                   "Comments:",
                   style: TextStyle(
@@ -429,13 +451,12 @@ void _showIdeaDetailsDialog(int index) {
                   ),
                 ),
                 SizedBox(height: 10.0),
-                // Add comment field
                 TextField(
                   controller: commentController,
                   decoration: InputDecoration(
                     labelText: 'Add a comment',
                     labelStyle: TextStyle(
-                      color: Color(0xFFB5651D), // Dark brown label
+                      color: Color(0xFFB5651D),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: Color(0xFFFFD700), width: 2.0),
@@ -448,13 +469,12 @@ void _showIdeaDetailsDialog(int index) {
                   ),
                 ),
                 SizedBox(height: 20.0),
-                // Action buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFFFA500), // Warm honey color for the button
+                        backgroundColor: Color(0xFFFFA500),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12.0),
                         ),
@@ -467,7 +487,7 @@ void _showIdeaDetailsDialog(int index) {
                     ),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFFFA500), // Warm honey color for the button
+                        backgroundColor: Color(0xFFFFA500),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12.0),
                         ),
@@ -490,29 +510,53 @@ void _showIdeaDetailsDialog(int index) {
 }
 
 
-
 void _addComment(int index, String comment) async {
-  if (comment.isEmpty) return;
+  if (comment.isEmpty) {
+    print("Error: Comment is empty.");
+    return;
+  }
 
-  User? user = FirebaseAuth.instance.currentUser;
-  if (user != null) {
-    DocumentSnapshot userSnapshot = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-    String username = userSnapshot['username'];
+  final User? user = FirebaseAuth.instance.currentUser;
 
-    setState(() {
-      ideas[index] = ideas[index].copyWith(comments: [...ideas[index].comments, '$username: $comment']);
+  if (user == null) {
+    print("Error: No user is logged in.");
+    return;
+  }
+
+  final String ideaId = ideas[index].id;
+  final String collectionName = widget.useOtherDatabase ? 'other_ideas' : 'ideas';
+  final String documentPath = widget.useOtherDatabase
+      ? "$collectionName/$ideaId"
+      : "$collectionName/${user.uid}/user_ideas/$ideaId";
+
+  try {
+    print("Adding comment to document: $documentPath");
+
+    DocumentReference docRef = FirebaseFirestore.instance.doc(documentPath);
+    DocumentSnapshot docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      print("Error: Document not found at path: $documentPath");
+      return;
+    }
+
+    await docRef.update({
+      'comments': FieldValue.arrayUnion([comment]),
     });
 
-    try {
-      String collectionName = widget.useOtherDatabase ? 'other_ideas' : 'ideas';
-      await FirebaseFirestore.instance.collection(collectionName).doc(ideas[index].id).update({
-        'comments': FieldValue.arrayUnion(['$username: $comment']),
-      });
-    } catch (e) {
-      print("Error adding comment: $e");
-    }
+    // Increment the "commentsPosted" field in the user's profile
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'commentsPosted': FieldValue.increment(1),
+    });
+
+    print("Comment added successfully to idea ID: $ideaId");
+  } catch (e) {
+    print("Error adding comment: $e");
   }
 }
+
+
+
 
 
 void _upvoteIdea(int index) async {
@@ -551,13 +595,13 @@ void _upvoteIdea(int index) async {
     double offsetY = idea.y - 50;
     _transformationController.value = Matrix4.identity()
       ..translate(-offsetX, -offsetY)
-      ..scale(1.5); // Adjust the scale as needed
+      ..scale(1.5);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFFFCC00), // Background color
+      backgroundColor: Color(0xFFFFCC00),
       appBar: AppBar(
         title: Center(
           child: Row(
@@ -646,7 +690,7 @@ void _upvoteIdea(int index) async {
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Color(0xFFFA9A00),
         type: BottomNavigationBarType.fixed,
-        currentIndex: _selectedIndex, // Set the selected index
+        currentIndex: _selectedIndex,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.lightbulb_outline),
@@ -663,7 +707,7 @@ void _upvoteIdea(int index) async {
         ],
         onTap: (index) {
           setState(() {
-            _selectedIndex = index; // Update the selected index
+            _selectedIndex = index;
           });
 
           if (index == 0 && !_isCurrentPage("MyIdeas")) {
@@ -693,7 +737,6 @@ void _upvoteIdea(int index) async {
     );
   }
 
-  // Utility method to avoid redundant navigation
   bool _isCurrentPage(String pageName) {
     return (widget.useOtherDatabase && pageName == "OtherIdeas") ||
         (!widget.useOtherDatabase && pageName == "MyIdeas");

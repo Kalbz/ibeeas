@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path/path.dart' show basename; // This only imports basename, avoiding conflicts
+import 'package:path/path.dart' show basename;
 import 'dart:io';
 
 class ProfilePage extends StatefulWidget {
@@ -12,57 +12,8 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String? username;
-  String? email;
-  int honey = 0;
-  int ideasPosted = 0;
-  int commentsPosted = 0;
   File? _profileImage;
-  bool isLoading = true;
   final ImagePicker _imagePicker = ImagePicker();
-  String? profileImageUrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserData();
-  }
-
-  Future<void> _loadUserData() async {
-    User? user = FirebaseAuth.instance.currentUser;
-
-    if (user != null) {
-      try {
-        DocumentSnapshot userSnapshot = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-        if (userSnapshot.exists) {
-          setState(() {
-            username = userSnapshot.data().toString().contains('username') ? userSnapshot['username'] : 'User';
-            email = user.email;
-            honey = userSnapshot.data().toString().contains('honey') ? userSnapshot['honey'] : 0;
-            ideasPosted = userSnapshot.data().toString().contains('ideasPosted') ? userSnapshot['ideasPosted'] : 0;
-            commentsPosted = userSnapshot.data().toString().contains('commentsPosted') ? userSnapshot['commentsPosted'] : 0;
-            profileImageUrl = userSnapshot.data().toString().contains('profileImageUrl') ? userSnapshot['profileImageUrl'] : null;
-            isLoading = false;
-          });
-        } else {
-          setState(() {
-            username = 'User';
-            email = user.email;
-            isLoading = false;
-          });
-        }
-      } catch (e) {
-        print("Error loading user data: $e");
-        setState(() {
-          isLoading = false;
-        });
-      }
-    } else {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
 
   Future<void> _pickImage() async {
     try {
@@ -74,7 +25,7 @@ class _ProfilePageState extends State<ProfilePage> {
         });
 
         // Upload to Firebase Storage
-        String fileName = basename(pickedFile.path); // Get the file name
+        String fileName = basename(pickedFile.path);
         User? user = FirebaseAuth.instance.currentUser;
 
         if (user != null) {
@@ -94,17 +45,16 @@ class _ProfilePageState extends State<ProfilePage> {
               .doc(user.uid)
               .update({'profileImageUrl': downloadUrl});
 
-          setState(() {
-            profileImageUrl = downloadUrl;
-          });
+          setState(() {});
 
-          // Display a success message
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Profile picture updated successfully.")));
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Profile picture updated successfully.")));
         }
       }
     } catch (e) {
       print("Error picking and uploading image: $e");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to upload profile picture.")));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to upload profile picture.")));
     }
   }
 
@@ -113,143 +63,192 @@ class _ProfilePageState extends State<ProfilePage> {
     Navigator.pushReplacementNamed(context, '/login');
   }
 
-@override
-Widget build(BuildContext context) {
-  final double screenHeight = MediaQuery.of(context).size.height;
-  final double screenWidth = MediaQuery.of(context).size.width;
+  @override
+  Widget build(BuildContext context) {
+    final User? user = FirebaseAuth.instance.currentUser;
 
-  return Scaffold(
-    extendBodyBehindAppBar: true,
-    appBar: AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-    ),
-    body: Stack(
-      children: [
-        // Background image
-        Positioned.fill(
-          child: Image.asset(
-            'assets/profile_background.png',
-            fit: BoxFit.cover,
+    if (user == null) {
+      return Center(child: Text("No user is logged in."));
+    }
+
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Stack(
+        children: [
+          // Background image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/profile_background.png',
+              fit: BoxFit.cover,
+            ),
           ),
-        ),
-        // Main content
-        isLoading
-            ? Center(child: CircularProgressIndicator())
-            : Padding(
-                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1, vertical: screenHeight * 0.05),
+          // User data with StreamBuilder
+          StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                return Center(child: Text("Error loading profile."));
+              }
+
+              if (!snapshot.hasData || !snapshot.data!.exists) {
+                return Center(child: Text("User data not found."));
+              }
+
+              final userData = snapshot.data!.data() as Map<String, dynamic>;
+              final username = userData['username'] ?? 'Guest';
+              final honey = userData['honey'] ?? 0;
+              final ideasPosted = userData['ideasPosted'] ?? 0;
+              final commentsPosted = userData['commentsPosted'] ?? 0;
+              final profileImageUrl = userData['profileImageUrl'];
+
+              return Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.1,
+                  vertical: MediaQuery.of(context).size.height * 0.05,
+                ),
                 child: Column(
                   children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // Profile picture upload row
-                          GestureDetector(
-                            onTap: _pickImage,
-                            child: CircleAvatar(
-                              radius: 50,
-                              backgroundImage: _profileImage != null
-                                  ? FileImage(_profileImage!)
-                                  : (profileImageUrl != null
-                                      ? NetworkImage(profileImageUrl!)
-                                      : AssetImage('assets/profile_picture.jpg')) as ImageProvider,
-                              child: _profileImage == null && profileImageUrl == null
-                                  ? Icon(Icons.add_a_photo, color: Colors.white, size: 30)
-                                  : null,
-                            ),
-                          ),
-SizedBox(height: 32), // Increased from 16 to 32 for more spacing
-
-// Username and Honey row
-Row(
-  mainAxisAlignment: MainAxisAlignment.center, // Align items centrally
-  children: [
-    // Username section
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          "Name",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        SizedBox(height: 8),
-        Text(
-          username ?? 'Guest',
-          style: TextStyle(fontSize: 16, color: Colors.white),
-        ),
-      ],
-    ),
-    // Reduce the spacing between sections
-    SizedBox(width: 56), // Adjust this value as needed
-    // Honey section
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          "Honey",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        SizedBox(height: 8),
-        Text(
-          honey.toString(),
-          style: TextStyle(fontSize: 16, color: Colors.white),
-        ),
-      ],
-    ),
-  ],
-),
-
-                          SizedBox(height: 50),
-                          // Ideas posted and Comments posted row
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Column(
-                                children: [
-                                  Text(
-                                    "Ideas",
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    ideasPosted.toString(),
-                                    style: TextStyle(fontSize: 16, color: Colors.white),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(width: 150),
-                              Column(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-
-                                children: [
-                                  Text(
-                                    "Comments",
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    commentsPosted.toString(),
-                                    style: TextStyle(fontSize: 16, color: Colors.white),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
+                    GestureDetector(
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundImage: profileImageUrl != null
+                            ? NetworkImage(profileImageUrl)
+                            : AssetImage('assets/profile_picture.jpg')
+                                as ImageProvider,
+                        child: profileImageUrl == null
+                            ? Icon(Icons.add_a_photo,
+                                color: Colors.white, size: 30)
+                            : null,
                       ),
                     ),
-                    Spacer(), // Push the Logout button down
+                    SizedBox(height: 32),
+                    // User Info Row (Name and Honey)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Username Column
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Name",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              username,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(width: 56),
+                        // Honey Column
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Honey",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              honey.toString(),
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 50),
+                    // Ideas and Comments Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Ideas Column
+                        Column(
+                          children: [
+                            Text(
+                              "Ideas",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              ideasPosted.toString(),
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(width: 150),
+                        // Comments Column
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Comments",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              commentsPosted.toString(),
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Spacer(),
+                    // Logout Button
                     ElevatedButton(
                       onPressed: _logout,
                       child: Text("Logout"),
                     ),
                   ],
                 ),
-              ),
-      ],
-    ),
-  );
-}
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 }

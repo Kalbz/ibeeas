@@ -83,7 +83,6 @@ class _HexagonState extends State<Hexagon> {
   }
 
   void _modifySvgColors(xml.XmlDocument svgXml) {
-    // Define your color mapping
     final colorMap = {
       'outerHexagon': '#B45D00',
       'middleHexagon': '#F5C12F',
@@ -108,15 +107,15 @@ class _HexagonState extends State<Hexagon> {
   Widget build(BuildContext context) {
     if (_modifiedSvgString != null && _modifiedSvgString!.isNotEmpty) {
       return SizedBox(
-        width: widget.width * 1.15, // Slightly increase width to ensure overlap
-        height: widget.height * 1.15, // Slightly increase height to ensure overlap
+        width: widget.width * 1.15,
+        height: widget.height * 1.15,
         child: Stack(
           children: [
             SvgPicture.string(
               _modifiedSvgString!,
               width: widget.width * 1.15,
               height: widget.height * 1.15,
-              fit: BoxFit.fill, // Changed from BoxFit.cover to BoxFit.fill
+              fit: BoxFit.fill,
             ),
             Center(
               child: Text(
@@ -129,7 +128,7 @@ class _HexagonState extends State<Hexagon> {
         ),
       );
     } else {
-      // Optionally, display a placeholder while loading
+
       return SizedBox(
         width: widget.width,
         height: widget.height,

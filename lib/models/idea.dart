@@ -8,8 +8,8 @@ class Idea {
   final double x;
   final double y;
   final bool visible;
-  final int upvotes; // New field for upvotes
-  final List<String> comments; // New field for comments
+  final int upvotes;
+  final List<String> comments;
 
   Idea({
     required this.id,

@@ -5,10 +5,29 @@ import 'login_page.dart';
 import 'profile_page.dart';
 import 'contact_page.dart';
 import 'pages/idea_grid_page.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+
+const firebaseConfig = FirebaseOptions(
+  apiKey: "AIzaSyDA07LMjsNM3nlb686yBhv0pJeEVICB0Uc",
+  authDomain: "ibeeas.firebaseapp.com",
+  projectId: "ibeeas",
+  storageBucket: "ibeeas.appspot.com",
+  messagingSenderId: "60365986213",
+  appId: "1:60365986213:web:70f411c3586babe36df04c",
+  measurementId: "G-79V3KB96JV",
+);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+
+  if (kIsWeb) {
+    await Firebase.initializeApp(options: firebaseConfig); // Web initialization
+  } else if (Platform.isIOS || Platform.isAndroid) {
+    await Firebase.initializeApp(); // Native (iOS/Android) initialization
+  }
+
   runApp(MyApp());
 }
 
@@ -20,14 +39,14 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.yellow,
         appBarTheme: AppBarTheme(
-          backgroundColor: Color(0xffa500), // Set global AppBar background color
+          backgroundColor: Color(0xffa500), 
           titleTextStyle: TextStyle(
-            color: Colors.white, // Title text color for better contrast
+            color: Colors.white, 
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
           iconTheme: IconThemeData(
-            color: Colors.white, // Icon color in the AppBar
+            color: Colors.white,
           ),
         ),
       ),
