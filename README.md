@@ -1,16 +1,25 @@
-# flutter_application_1
+# IBeeas
 
-A new Flutter project.
+A place to share ideas.
 
-## Getting Started
+## What is it?
 
-This project is a starting point for a Flutter application.
+An app I built to both save your own personal ideas, and to share them with the world. It is heavily themed towards bees & honey, to "spread" your ibeea in the world.
 
-A few resources to get you started if this is your first Flutter project:
+## Tech Stack
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+**Frontend & UI:**
+- Flutter 3.5+
+- Dart 3.5.3
+- Rive (animated vector graphics)
+- flutter_svg (for SVG rendering)
+- image_picker (for profile image uploads)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+**Backend (via Firebase):**
+- Firebase Authentication (email, Google, Facebook)
+- Cloud Firestore (real-time database)
+- Firebase Storage (user-uploaded files)
+
+## Demo
+
+[![Watch the demo](https://img.youtube.com/vi/38y4Z9WSpJA/hqdefault.jpg)](https://youtu.be/38y4Z9WSpJA)
