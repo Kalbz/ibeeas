@@ -9,15 +9,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 
-const firebaseConfig = FirebaseOptions(
-  apiKey: "AIzaSyDA07LMjsNM3nlb686yBhv0pJeEVICB0Uc",
-  authDomain: "ibeeas.firebaseapp.com",
-  projectId: "ibeeas",
-  storageBucket: "ibeeas.appspot.com",
-  messagingSenderId: "60365986213",
-  appId: "1:60365986213:web:70f411c3586babe36df04c",
-  measurementId: "G-79V3KB96JV",
-);
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
